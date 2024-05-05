@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+
+	<property resource="application.properties" />
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{yyyy-MMM-dd HH:mm:ss.SSS} [${HOSTNAME}] [%thread] %-5level [Corrid: %X{watchdog_cr_id}] [Pid: ${PID}] [${spring.application.name}]
+					%logger{0}:%line - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>~/var/log/cronicle/cronicle.log</file>
+		<append>false</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- hourly rollover -->
+			<fileNamePattern>/var/log/cronicle/cronicle-%d{yyyy-MM-dd}-%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%d{yyyy-MMM-dd HH:mm:ss.SSS} [${HOSTNAME}] [%thread] %-5level [Corrid: %X{watchdog_cr_id}] [Pid: ${PID}] [${spring.application.name}]
+					%logger{0}:%line - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<!-- appender name="PAPERTRAIL" class="ch.qos.logback.classic.net.SyslogAppender"> <syslogHost>logs2.papertrailapp.com</syslogHost> <port>18576</port> 
+		<facility>USER</facility> <suffixPattern>spring-app: %-5level [%thread] %logger %msg%n </suffixPattern> <maxMessageSize>125000</maxMessageSize> </appender -->
+
+	<appender name="ELASTIC" class="com.internetitem.logback.elasticsearch.ElasticsearchAppender">
+		<url>${elastic.host}</url>
+		<index>logs-cronicle_%date{yyyy.MM.dd}</index>
+		<!-- type>log</type -->
+		<authentication class="com.internetitem.logback.elasticsearch.config.BasicAuthentication" />
+		<properties>
+			<property>
+				<name>host</name>
+				<value>${HOSTNAME}</value>
+				<allowEmpty>false</allowEmpty>
+			</property>
+			<property>
+				<name>environment</name>
+				<value>${ENV:-local}</value>
+			</property>
+			<property>
+				<name>appname</name>
+				<value>${spring.application.name}</value>
+			</property>
+			<property>
+				<name>severity</name>
+				<value>%level</value>
+			</property>
+			<property>
+				<name>thread</name>
+				<value>%thread</value>
+			</property>
+			<property>
+				<name>stacktrace</name>
+				<value>%ex</value>
+			</property>
+			<property>
+				<name>logger</name>
+				<value>%logger{0}</value>
+			</property>
+			<property>
+				<name>pattern</name>
+				<value>%d{yyyy-MMM-dd HH:mm:ss.SSS} [${HOSTNAME}] [%thread] %-5level [Corrid: %X{watchdog_cr_id}] [Pid: ${PID}] [${spring.application.name}]
+					%logger{0}:%line - %msg%n
+				</value>
+			</property>
+		</properties>
+		<headers>
+			<header>
+				<name>Content-Type</name>
+				<value>application/x-ndjson</value>
+			</header>
+		</headers>
+	</appender>
+
+	<springProfile name="local">
+		<root level="debug">
+			<appender-ref ref="STDOUT" />
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
+
+	<springProfile name="!local">
+		<root level="info">
+			<appender-ref ref="ELASTIC" />
+		</root>
+	</springProfile>
+
+</configuration>
