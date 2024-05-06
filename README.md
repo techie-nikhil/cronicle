@@ -13,5 +13,8 @@ All the above activities are handled without service restart
 
 
 Missing points :
+
 Request Validation
+
+
 Scalable approach of executing dynamic query on hibernate
